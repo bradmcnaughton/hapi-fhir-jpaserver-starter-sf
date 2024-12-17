@@ -175,14 +175,6 @@
             <artifactId>logback-core</artifactId>
         </dependency>
 
-        <!-- Needed for JEE/Servlet support -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- If you are using HAPI narrative generation, you will need to include Thymeleaf as well. Otherwise the following can be omitted. -->
         <dependency>
             <groupId>org.thymeleaf</groupId>

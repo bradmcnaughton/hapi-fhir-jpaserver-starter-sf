@@ -6,10 +6,10 @@ Note that this project is specifically intended for end users of the HAPI FHIR J
 
 While this project shows how you can use many parts of the HAPI FHIR framework there are a set of features which you should be aware of are missing or something you need to supply yourself or get professional support ahead of using it directly in production:
 
-1) The service comes with no security implementation. See how it can be done [here](https://hapifhir.io/hapi-fhir/docs/security/introduction.html)
-2) The service comes with no enterprise logging. See how it can be done [here](https://hapifhir.io/hapi-fhir/docs/security/balp_interceptor.html)
-3) The internal topic cache used by subscriptions in HAPI FHIR are not shared across multiple instances as the [default supplied implementation is in-mem](https://github.com/hapifhir/hapi-fhir/blob/master/hapi-fhir-jpaserver-subscription/src/main/java/ca/uhn/fhir/jpa/topic/ActiveSubscriptionTopicCache.java)
-4) The internal message broker channel in HAPI FHIR is not shared across multiple instances as the [default supplied implementation is in-mem](https://github.com/hapifhir/hapi-fhir/blob/master/hapi-fhir-storage/src/main/java/ca/uhn/fhir/jpa/subscription/channel/api/IChannelFactory.java). This impacts the use of modules listed [here](https://smilecdr.com/docs/installation/message_broker.html#modules-dependent-on-message-brokers)
+1. The service comes with no security implementation. See how it can be done [here](https://hapifhir.io/hapi-fhir/docs/security/introduction.html)
+2. The service comes with no enterprise logging. See how it can be done [here](https://hapifhir.io/hapi-fhir/docs/security/balp_interceptor.html)
+3. The internal topic cache used by subscriptions in HAPI FHIR are not shared across multiple instances as the [default supplied implementation is in-mem](https://github.com/hapifhir/hapi-fhir/blob/master/hapi-fhir-jpaserver-subscription/src/main/java/ca/uhn/fhir/jpa/topic/ActiveSubscriptionTopicCache.java)
+4. The internal message broker channel in HAPI FHIR is not shared across multiple instances as the [default supplied implementation is in-mem](https://github.com/hapifhir/hapi-fhir/blob/master/hapi-fhir-storage/src/main/java/ca/uhn/fhir/jpa/subscription/channel/api/IChannelFactory.java). This impacts the use of modules listed [here](https://smilecdr.com/docs/installation/message_broker.html#modules-dependent-on-message-brokers)
 
 Need Help? Please see: https://github.com/hapifhir/hapi-fhir/wiki/Getting-Help
 
@@ -20,11 +20,13 @@ In order to use this sample, you should have:
 - [This project](https://github.com/hapifhir/hapi-fhir-jpaserver-starter) checked out. You may wish to create a GitHub Fork of the project and check that out instead so that you can customize the project and save the results to GitHub.
 
 ### and either
- - Oracle Java (JDK) installed: Minimum JDK17 or newer.
- - Apache Maven build tool (newest version)
+
+- Oracle Java (JDK) installed: Minimum JDK17 or newer.
+- Apache Maven build tool (newest version)
 
 ### or
- - Docker, as the entire project can be built using multistage docker (with both JDK and maven wrapped in docker) or used directly from [Docker Hub](https://hub.docker.com/r/hapiproject/hapi)
+
+- Docker, as the entire project can be built using multistage docker (with both JDK and maven wrapped in docker) or used directly from [Docker Hub](https://hub.docker.com/r/hapiproject/hapi)
 
 ## Running via [Docker Hub](https://hub.docker.com/r/hapiproject/hapi)
 
@@ -56,19 +58,19 @@ You can customize HAPI by telling HAPI to look for the configuration file in a d
 ```
 docker run -p 8090:8080 -v $(pwd)/yourLocalFolder:/configs -e "--spring.config.location=file:///configs/another.application.yaml" hapiproject/hapi:latest
 ```
-Here, the configuration file (*another.application.yaml*) is placed locally in the folder *yourLocalFolder*.
 
-
+Here, the configuration file (_another.application.yaml_) is placed locally in the folder _yourLocalFolder_.
 
 ```
 docker run -p 8090:8080 -e "--spring.config.location=classpath:/another.application.yaml" hapiproject/hapi:latest
 ```
-Here, the configuration file (*another.application.yaml*) is part of the compiled set of resources.
 
-### Example using ``docker-compose.yml`` for docker-compose
+Here, the configuration file (_another.application.yaml_) is part of the compiled set of resources.
+
+### Example using `docker-compose.yml` for docker-compose
 
 ```yaml
-version: '3.7'
+version: "3.7"
 
 services:
   fhir:
@@ -82,7 +84,6 @@ services:
     depends_on:
       - db
 
-
   db:
     image: postgres
     restart: always
@@ -95,15 +96,15 @@ services:
 
 configs:
   hapi:
-     file: ./hapi.application.yaml
+    file: ./hapi.application.yaml
 ```
 
-Provide the following content in ``./hapi.application.yaml``:
+Provide the following content in `./hapi.application.yaml`:
 
 ```yaml
 spring:
   datasource:
-    url: 'jdbc:postgresql://db:5432/hapi'
+    url: "jdbc:postgresql://db:5432/hapi"
     username: admin
     password: admin
     driverClassName: org.postgresql.Driver
@@ -118,7 +119,7 @@ spring:
 This example is an extension of the above one, now adding a custom interceptor.
 
 ```yaml
-version: '3.7'
+version: "3.7"
 
 services:
   fhir:
@@ -146,17 +147,17 @@ services:
 
 configs:
   hapi:
-     file: ./hapi.application.yaml
+    file: ./hapi.application.yaml
   hapi-extra-classes:
-     file: ./hapi-extra-classes
+    file: ./hapi-extra-classes
 ```
 
-Provide the following content in ``./hapi.application.yaml``:
+Provide the following content in `./hapi.application.yaml`:
 
 ```yaml
 spring:
   datasource:
-    url: 'jdbc:postgresql://db:5432/hapi'
+    url: "jdbc:postgresql://db:5432/hapi"
     username: admin
     password: admin
     driverClassName: org.postgresql.Driver
@@ -199,6 +200,7 @@ public class YourInterceptor
 The easiest way to run this server entirely depends on your environment requirements. The following ways are supported:
 
 ### Using jetty
+
 ```bash
 mvn -Pjetty spring-boot:run
 ```
@@ -206,6 +208,7 @@ mvn -Pjetty spring-boot:run
 The Server will then be accessible at http://localhost:8080/fhir and the CapabilityStatement will be found at http://localhost:8080/fhir/metadata.
 
 ### Using Spring Boot
+
 ```bash
 mvn spring-boot:run
 ```
@@ -216,84 +219,88 @@ If you want to run this server on a different port, you can change the port in t
 
 ```yaml
 server:
-#  servlet:
-#    context-path: /example/path
+  #  servlet:
+  #    context-path: /example/path
   port: 8888
 ```
 
 The Server will then be accessible at http://localhost:8888/fhir and the CapabilityStatement will be found at http://localhost:8888/fhir/metadata. Remember to adjust your overlay configuration in the `application.yaml` file to the following:
 
 ```yaml
-    tester:
-      -
-          id: home
-          name: Local Tester
-          server_address: 'http://localhost:8888/fhir'
-          refuse_to_fetch_third_party_urls: false
-          fhir_version: R4
+tester:
+  - id: home
+    name: Local Tester
+    server_address: "http://localhost:8888/fhir"
+    refuse_to_fetch_third_party_urls: false
+    fhir_version: R4
 ```
 
 ### Using Spring Boot with :run
+
 ```bash
 mvn clean spring-boot:run -Pboot
 ```
+
 Server will then be accessible at http://localhost:8080/ and eg. http://localhost:8080/fhir/metadata. Remember to adjust you overlay configuration in the application.yaml to the following:
 
 ```yaml
-    tester:
-      -
-          id: home
-          name: Local Tester
-          server_address: 'http://localhost:8080/fhir'
-          refuse_to_fetch_third_party_urls: false
-          fhir_version: R4
+tester:
+  - id: home
+    name: Local Tester
+    server_address: "http://localhost:8080/fhir"
+    refuse_to_fetch_third_party_urls: false
+    fhir_version: R4
 ```
 
 ### Using Spring Boot
+
 ```bash
 mvn clean package spring-boot:repackage -DskipTests=true -Pboot && java -jar target/ROOT.war
 ```
+
 Server will then be accessible at http://localhost:8080/ and eg. http://localhost:8080/fhir/metadata. Remember to adjust your overlay configuration in the application.yaml to the following:
 
 ```yaml
-    tester:
-      -
-          id: home
-          name: Local Tester
-          server_address: 'http://localhost:8080/fhir'
-          refuse_to_fetch_third_party_urls: false
-          fhir_version: R4
+tester:
+  - id: home
+    name: Local Tester
+    server_address: "http://localhost:8080/fhir"
+    refuse_to_fetch_third_party_urls: false
+    fhir_version: R4
 ```
+
 ### Using Spring Boot and Google distroless
+
 ```bash
 mvn clean package com.google.cloud.tools:jib-maven-plugin:dockerBuild -Dimage=distroless-hapi && docker run -p 8080:8080 distroless-hapi
 ```
+
 Server will then be accessible at http://localhost:8080/ and eg. http://localhost:8080/fhir/metadata. Remember to adjust your overlay configuration in the application.yaml to the following:
 
 ```yaml
-    tester:
-      -
-          id: home
-          name: Local Tester
-          server_address: 'http://localhost:8080/fhir'
-          refuse_to_fetch_third_party_urls: false
-          fhir_version: R4
+tester:
+  - id: home
+    name: Local Tester
+    server_address: "http://localhost:8080/fhir"
+    refuse_to_fetch_third_party_urls: false
+    fhir_version: R4
 ```
 
 ### Using the Dockerfile and multistage build
+
 ```bash
 ./build-docker-image.sh && docker run -p 8080:8080 hapi-fhir/hapi-fhir-jpaserver-starter:latest
 ```
+
 Server will then be accessible at http://localhost:8080/ and eg. http://localhost:8080/fhir/metadata. Remember to adjust your overlay configuration in the application.yaml to the following:
 
 ```yaml
-    tester:
-      -
-          id: home
-          name: Local Tester
-          server_address: 'http://localhost:8080/fhir'
-          refuse_to_fetch_third_party_urls: false
-          fhir_version: R4
+tester:
+  - id: home
+    name: Local Tester
+    server_address: "http://localhost:8080/fhir"
+    refuse_to_fetch_third_party_urls: false
+    fhir_version: R4
 ```
 
 ## Configurations
@@ -313,7 +320,7 @@ To configure the starter app to use PostgreSQL, instead of the default H2, updat
 ```yaml
 spring:
   datasource:
-    url: 'jdbc:postgresql://localhost:5432/hapi'
+    url: "jdbc:postgresql://localhost:5432/hapi"
     username: admin
     password: admin
     driverClassName: org.postgresql.Driver
@@ -334,7 +341,7 @@ To configure the starter app to use MS SQL Server, instead of the default H2, up
 ```yaml
 spring:
   datasource:
-    url: 'jdbc:sqlserver://<server>:<port>;databaseName=<databasename>'
+    url: "jdbc:sqlserver://<server>:<port>;databaseName=<databasename>"
     username: admin
     password: admin
     driverClassName: com.microsoft.sqlserver.jdbc.SQLServerDriver
@@ -346,32 +353,32 @@ Also, make sure you are not setting the Hibernate dialect explicitly, in other w
 hibernate.dialect: {some none Microsoft SQL dialect}
 ```
 
-
 Because the integration tests within the project rely on the default H2 database configuration, it is important to either explicitly skip the integration tests during the build process, i.e., `mvn install -DskipTests`, or delete the tests altogether. Failure to skip or delete the tests once you've configured PostgreSQL for the datasource.driver, datasource.url, and hibernate.dialect as outlined above will result in build errors and compilation failure.
-
 
 NOTE: MS SQL Server by default uses a case-insensitive codepage. This will cause errors with some operations - such as when expanding case-sensitive valuesets (UCUM) as there are unique indexes defined on the terminology tables for codes.
 It is recommended to deploy a case-sensitive database prior to running HAPI FHIR when using MS SQL Server to avoid these and potentially other issues.
 
 ## Adding custom interceptors
+
 Custom interceptors can be registered with the server by including the property `hapi.fhir.custom-interceptor-classes`. This will take a comma separated list of fully-qualified class names which will be registered with the server.
 Interceptors will be discovered in one of two ways:
 
-1) discovered from the Spring application context as existing Beans (can be used in conjunction with `hapi.fhir.custom-bean-packages`) or registered with Spring via other methods
+1. discovered from the Spring application context as existing Beans (can be used in conjunction with `hapi.fhir.custom-bean-packages`) or registered with Spring via other methods
 
 or
 
-2) classes will be instantiated via reflection if no matching Bean is found
+2. classes will be instantiated via reflection if no matching Bean is found
 
 ## Adding custom operations(providers)
+
 Custom operations(providers) can be registered with the server by including the property `hapi.fhir.custom-provider-classes`. This will take a comma separated list of fully-qualified class names which will be registered with the server.
 Providers will be discovered in one of two ways:
 
-1) discovered from the Spring application context as existing Beans (can be used in conjunction with `hapi.fhir.custom-bean-packages`) or registered with Spring via other methods
+1. discovered from the Spring application context as existing Beans (can be used in conjunction with `hapi.fhir.custom-bean-packages`) or registered with Spring via other methods
 
 or
 
-2) classes will be instantiated via reflection if no matching Bean is found
+2. classes will be instantiated via reflection if no matching Bean is found
 
 ## Customizing The Web Testpage UI
 
@@ -403,18 +410,16 @@ Again, browse to the following link to use the server (note that the port 8080 m
 
 You will then be able to access the JPA server e.g. using http://localhost:8080/fhir/metadata.
 
-If you would like it to be hosted at eg. hapi-fhir-jpaserver, eg. http://localhost:8080/hapi-fhir-jpaserver/ or http://localhost:8080/hapi-fhir-jpaserver/fhir/metadata - then rename the WAR file to ```hapi-fhir-jpaserver.war``` and adjust the overlay configuration accordingly e.g.
+If you would like it to be hosted at eg. hapi-fhir-jpaserver, eg. http://localhost:8080/hapi-fhir-jpaserver/ or http://localhost:8080/hapi-fhir-jpaserver/fhir/metadata - then rename the WAR file to `hapi-fhir-jpaserver.war` and adjust the overlay configuration accordingly e.g.
 
 ```yaml
-    tester:
-      -
-          id: home
-          name: Local Tester
-          server_address: 'http://localhost:8080/hapi-fhir-jpaserver/fhir'
-          refuse_to_fetch_third_party_urls: false
-          fhir_version: R4
+tester:
+  - id: home
+    name: Local Tester
+    server_address: "http://localhost:8080/hapi-fhir-jpaserver/fhir"
+    refuse_to_fetch_third_party_urls: false
+    fhir_version: R4
 ```
-
 
 ## Deploy with docker compose
 
@@ -431,7 +436,7 @@ properties in `src/main/resources/application.yaml`:
 ```yaml
 spring:
   datasource:
-    url: 'jdbc:postgresql://hapi-fhir-postgres:5432/hapi'
+    url: "jdbc:postgresql://hapi-fhir-postgres:5432/hapi"
     username: admin
     password: admin
     driverClassName: org.postgresql.Driver
@@ -444,7 +449,8 @@ jpa:
 ```
 
 ## Running hapi-fhir-jpaserver directly from IntelliJ as Spring Boot
-Make sure you run with the maven profile called ```boot``` and NOT also ```jetty```. Then you are ready to press debug the project directly without any extra Application Servers.
+
+Make sure you run with the maven profile called `boot` and NOT also `jetty`. Then you are ready to press debug the project directly without any extra Application Servers.
 
 ## Running hapi-fhir-jpaserver-example in Tomcat from IntelliJ
 
@@ -490,15 +496,15 @@ The server may be configured with subscription support by enabling properties in
 
 ## Enabling Clinical Reasoning
 
-Set `hapi.fhir.cr.enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable [Clinical Quality Language](https://cql.hl7.org/) on this server.  An alternate settings file, [cds.application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/cds.application.yaml), exists with the Clinical Reasoning module enabled and default settings that have been found to work with most CDS and dQM test cases.
+Set `hapi.fhir.cr.enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable [Clinical Quality Language](https://cql.hl7.org/) on this server. An alternate settings file, [cds.application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/cds.application.yaml), exists with the Clinical Reasoning module enabled and default settings that have been found to work with most CDS and dQM test cases.
 
 ## Enabling CDS Hooks
 
-Set `hapi.fhir.cdshooks.enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable [CDS Hooks](https://cds-hooks.org/) on this server.  The Clinical Reasoning module must also be enabled because this implementation of CDS Hooks includes [CDS on FHIR](https://build.fhir.org/clinicalreasoning-cds-on-fhir.html).  An example CDS Service using CDS on FHIR is available in the CdsHooksServletIT test class.
+Set `hapi.fhir.cdshooks.enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable [CDS Hooks](https://cds-hooks.org/) on this server. The Clinical Reasoning module must also be enabled because this implementation of CDS Hooks includes [CDS on FHIR](https://build.fhir.org/clinicalreasoning-cds-on-fhir.html). An example CDS Service using CDS on FHIR is available in the CdsHooksServletIT test class.
 
 ## Enabling MDM (EMPI)
 
-Set `hapi.fhir.mdm_enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable MDM on this server.  The MDM matching rules are configured in [mdm-rules.json](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/mdm-rules.json).  The rules in this example file should be replaced with actual matching rules appropriate to your data. Note that MDM relies on subscriptions, so for MDM to work, subscriptions must be enabled.
+Set `hapi.fhir.mdm_enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable MDM on this server. The MDM matching rules are configured in [mdm-rules.json](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/mdm-rules.json). The rules in this example file should be replaced with actual matching rules appropriate to your data. Note that MDM relies on subscriptions, so for MDM to work, subscriptions must be enabled.
 
 ## Using Elasticsearch
 
@@ -518,7 +524,7 @@ elasticsearch.schema_management_strategy=CREATE
 
 ## Enabling LastN
 
-Set `hapi.fhir.lastn_enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable the $lastn operation on this server.  Note that the $lastn operation relies on Elasticsearch, so for $lastn to work, indexing must be enabled using Elasticsearch.
+Set `hapi.fhir.lastn_enabled=true` in the [application.yaml](https://github.com/hapifhir/hapi-fhir-jpaserver-starter/blob/master/src/main/resources/application.yaml) file to enable the $lastn operation on this server. Note that the $lastn operation relies on Elasticsearch, so for $lastn to work, indexing must be enabled using Elasticsearch.
 
 ## Enabling Resource to be stored in Lucene Index
 
@@ -589,3 +595,235 @@ docker run --rm -it -p 8080:8080 \
 ```
 
 You can configure the agent using environment variables or Java system properties, see <https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/> for details.
+
+## Enable SSL/TLS with Self Signed Certificate
+
+The following steps will enable SSL/TLS with a self-signed certificate. SSL will be used for the server and in-browser client (tester). A trust store is created and used by the server for the internal communication which still uses the HTTPS listener.
+
+### 1. Certificate and Keystore Setup
+
+#### A. Generated Self-Signed Certificate and Keystores
+
+1. Created PKCS12 keystore with self-signed certificate:
+
+```bash
+keytool -genkeypair -alias tomcat -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore keystore.p12 -validity 365
+```
+
+2. Created JKS truststore and imported the certificate:
+
+```bash
+# Export certificate from keystore
+keytool -export -alias tomcat -file server.cer -keystore keystore.p12 -storetype PKCS12
+
+# Create truststore and import certificate
+keytool -import -alias tomcat -file server.cer -keystore truststore.jks -storetype JKS
+```
+
+3. Placed keystores in `src/main/resources/`:
+
+- `keystore.p12` - Contains server's private key and certificate
+- `truststore.jks` - Contains trusted certificates (including our server cert)
+
+### 2. Configuration Files Added/Modified
+
+#### A. application.yaml
+
+Added SSL configuration:
+
+```yaml
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    protocol: TLS
+    enabled-protocols: TLSv1.2
+    ciphers: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    key-store: classpath:keystore.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+    key-alias: tomcat
+    trust-store: classpath:truststore.jks
+    trust-store-password: changeit
+    trust-store-type: JKS
+    client-auth: none
+```
+
+#### B. TomcatSslConfig.java
+
+Created to handle SSL configuration for Tomcat:
+
+A detailed breakdown of the `customize()` method:
+
+```java
+@Override
+public void customize(TomcatServletWebServerFactory factory) {
+    factory.addConnectorCustomizers(connector -> {
+        try {
+            // Create temporary files for keystore and truststore
+            File tempKeyStore = createTempStoreFile("keystore", keyStorePath);
+            File tempTrustStore = createTempStoreFile("truststore", trustStorePath);
+
+            // Get the existing SSL host config
+            SSLHostConfig[] sslHostConfigs = connector.getProtocolHandler().findSslHostConfigs();
+            if (sslHostConfigs.length > 0) {
+                SSLHostConfig sslHostConfig = sslHostConfigs[0];
+
+                // Update protocols and ciphers
+                sslHostConfig.setProtocols("TLSv1.2");
+                sslHostConfig.setCiphers("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
+
+                // Update certificate configuration
+                SSLHostConfigCertificate cert = sslHostConfig.getCertificates().iterator().next();
+                cert.setCertificateKeystoreFile(tempKeyStore.getAbsolutePath());
+                cert.setCertificateKeystorePassword(keyStorePassword);
+                cert.setCertificateKeystoreType(keyStoreType);
+
+                // Update truststore configuration
+                sslHostConfig.setTruststoreFile(tempTrustStore.getAbsolutePath());
+                sslHostConfig.setTruststorePassword(trustStorePassword);
+                sslHostConfig.setTruststoreType(trustStoreType);
+            }
+        } catch (IOException e) {
+            logger.error("Failed to configure SSL connector", e);
+            throw new RuntimeException("Failed to configure SSL", e);
+        }
+    });
+}
+```
+
+Key aspects of this implementation:
+
+1. **Classpath to Filesystem Bridge**
+
+   - The keystores/truststores are initially stored in the application's classpath (in `src/main/resources`)
+   - `createTempStoreFile()` extracts these resources to temporary files that Tomcat can access
+   - This allows for secure packaging of certificates with the application while still making them accessible to Tomcat
+
+2. **Connector Configuration**
+
+   - The method customizes Tomcat's SSL connector through `SSLHostConfig`
+   - Sets specific TLS protocol version (TLS 1.2) and strong cipher suites
+   - Points Tomcat to the temporary keystore and truststore files
+
+3. **Resource Management Flow**
+
+   ```
+   Classpath Resources
+         ↓
+   createTempStoreFile()
+         ↓
+   Temporary Files on Disk
+         ↓
+   Tomcat SSL Configuration
+   ```
+
+4. **Security Considerations**
+   - Temporary files are created with unique names (using `File.createTempFile`)
+   - Files are automatically deleted when the JVM exits
+   - Access to the temporary files is limited to the application's runtime
+   - Sensitive material (certificates, private keys) never needs to be stored permanently on the filesystem
+
+This approach provides a clean solution for:
+
+- Packaging certificates securely with the application
+- Making certificates available to Tomcat's SSL configuration
+- Managing the lifecycle of sensitive files
+- Maintaining security best practices for certificate handling
+
+#### C. FhirClientConfig.java
+
+Added to configure FHIR clients with SSL support:
+
+```java
+@Configuration
+public class FhirClientConfig {
+    @Autowired
+    private SSLContext sslContext;
+
+    @Bean
+    public FhirContext fhirContext() {
+        FhirContext ctx = FhirContext.forR4();
+        CloseableHttpClient httpClient = HttpClients.custom()
+                .setSSLContext(sslContext)
+                .build();
+        ctx.getRestfulClientFactory().setHttpClient(httpClient);
+        return ctx;
+    }
+}
+```
+
+#### D. FhirTesterConfig.java
+
+Updated to support SSL in the FHIR tester UI:
+
+```java
+@Configuration
+public class FhirTesterConfig {
+    private final SSLContext sslContext;
+
+    @Bean
+    public TesterConfig testerConfig() {
+        TesterConfig retVal = new TesterConfig();
+        retVal.addServer()
+            .withId("home")
+            .withFhirVersion(FhirVersionEnum.valueOf(fhirVersion))
+            .withBaseUrl(serverAddress)
+            .withName(name);
+
+        retVal.setClientFactory(new ITestingUiClientFactory() {
+            @Override
+            public IGenericClient newClient(FhirContext theFhirContext,
+                                          HttpServletRequest theRequest,
+                                          String theServerBase) {
+                CloseableHttpClient httpClient = HttpClients.custom()
+                        .setSSLContext(sslContext)
+                        .build();
+                theFhirContext.getRestfulClientFactory().setHttpClient(httpClient);
+                return theFhirContext.newRestfulGenericClient(theServerBase);
+            }
+        });
+        return retVal;
+    }
+}
+```
+
+#### E. logback.xml
+
+Added SSL-related debug logging (optional). Will assist with debugging SSL/TLS issues:
+
+```xml
+<logger name="org.apache.tomcat.util.net" level="DEBUG"/>
+<logger name="org.springframework.boot.web.embedded.tomcat" level="DEBUG"/>
+<logger name="javax.net.ssl" level="DEBUG"/>
+<logger name="sun.security.ssl" level="DEBUG"/>
+```
+
+### Key Features of the Implementation
+
+1. **TLS 1.2 Support** with strong cipher suites:
+
+   - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+   - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+
+2. **Proper Certificate Management**
+
+   - PKCS12 keystore for server certificate and private key
+   - JKS truststore for trusted certificates
+   - Proper certificate chain validation
+
+3. **Centralized SSL Context**
+
+   - Single SSLContext bean shared across components
+   - Consistent SSL configuration throughout the application
+
+4. **Secure Client Configuration**
+
+   - All FHIR clients configured with proper SSL context
+   - Proper certificate validation for internal calls
+
+5. **Debug Logging** for SSL/TLS operations
+
+6. **Temporary File Management** for storing keystores/truststores from the classpath in an accessible location for Tomcat
+
+The implementation provides a secure HTTPS endpoint at `https://localhost:8443/fhir` with proper certificate management and SSL configuration across all components.
