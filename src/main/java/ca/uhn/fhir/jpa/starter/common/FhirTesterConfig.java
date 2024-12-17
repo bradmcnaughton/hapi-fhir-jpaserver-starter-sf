@@ -1,53 +1,70 @@
 package ca.uhn.fhir.jpa.starter.common;
 
-import ca.uhn.fhir.jpa.starter.AppProperties;
-import ca.uhn.fhir.to.FhirTesterMvcConfig;
-import ca.uhn.fhir.to.TesterConfig;
+import javax.net.ssl.SSLContext;
+
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-// @formatter:off
-/**
- * This spring config file configures the web testing module. It serves two
- * purposes:
- * 1. It imports FhirTesterMvcConfig, which is the spring config for the
- *    tester itself
- * 2. It tells the tester which server(s) to talk to, via the testerConfig()
- *    method below
- */
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.context.FhirVersionEnum;
+import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.api.ServerValidationModeEnum;
+import ca.uhn.fhir.rest.server.util.ITestingUiClientFactory;
+import ca.uhn.fhir.to.FhirTesterMvcConfig;
+import ca.uhn.fhir.to.TesterConfig;
+import jakarta.servlet.http.HttpServletRequest;
+
 @Configuration
 @Import(FhirTesterMvcConfig.class)
-@Conditional(FhirTesterConfigCondition.class)
 public class FhirTesterConfig {
 
-	/**
-	 * This bean tells the testing webpage which servers it should configure itself
-	 * to communicate with. In this example we configure it to talk to the local
-	 * server, as well as one public server. If you are creating a project to
-	 * deploy somewhere else, you might choose to only put your own server's
-	 * address here.
-	 * <p>
-	 * Note the use of the ${serverBase} variable below. This will be replaced with
-	 * the base URL as reported by the server itself. Often for a simple Tomcat
-	 * (or other container) installation, this will end up being something
-	 * like "http://localhost:8080/hapi-fhir-jpaserver-starter". If you are
-	 * deploying your server to a place with a fully qualified domain name,
-	 * you might want to use that instead of using the variable.
-	 */
+	@Value("${hapi.fhir.tester.home.name:Local Tester}")
+	private String name;
+	@Value("${hapi.fhir.tester.home.server_address:https://localhost:8443/fhir}")
+	private String serverAddress;
+	@Value("${hapi.fhir.tester.home.refuse_to_fetch_third_party_urls:false}")
+	private boolean refuseToFetchThirdPartyUrls;
+	@Value("${hapi.fhir.tester.home.fhir_version:R4}")
+	private String fhirVersion;
+
+	private final SSLContext sslContext;
+
+	public FhirTesterConfig(SSLContext sslContext) {
+		this.sslContext = sslContext;
+	}
+
 	@Bean
-	public TesterConfig testerConfig(AppProperties appProperties) {
+	public TesterConfig testerConfig() {
 		TesterConfig retVal = new TesterConfig();
-		appProperties.getTester().forEach((key, value) -> {
-			retVal.addServer()
-					.withId(key)
-					.withFhirVersion(value.getFhir_version())
-					.withBaseUrl(value.getServer_address())
-					.withName(value.getName());
-			retVal.setRefuseToFetchThirdPartyUrls(value.getRefuse_to_fetch_third_party_urls());
+		
+		// Add local server
+		retVal.addServer()
+			.withId("home")
+			.withFhirVersion(FhirVersionEnum.valueOf(fhirVersion))
+			.withBaseUrl(serverAddress)
+			.withName(name);
+
+		retVal.setClientFactory(new ITestingUiClientFactory() {
+			@Override
+			public IGenericClient newClient(FhirContext theFhirContext, HttpServletRequest theRequest, String theServerBase) {
+				theFhirContext.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
+				theFhirContext.getRestfulClientFactory().setSocketTimeout(5 * 60 * 1000);
+				
+				// Create HTTP client with SSL context
+				CloseableHttpClient httpClient = HttpClients.custom()
+						.setSSLContext(sslContext)
+						.build();
+				
+				theFhirContext.getRestfulClientFactory().setHttpClient(httpClient);
+				
+				return theFhirContext.newRestfulGenericClient(theServerBase);
+			}
 		});
+
 		return retVal;
 	}
 }
-// @formatter:on

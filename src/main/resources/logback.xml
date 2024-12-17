@@ -6,4 +6,8 @@
 		<appender-ref ref="CONSOLE" />
 	</root>
 	<logger name = "org.opencds.cqf.cql.engine.debug" level="DEBUG"/>
+	<logger name="org.apache.tomcat.util.net" level="DEBUG"/>
+	<logger name="org.springframework.boot.web.embedded.tomcat" level="DEBUG"/>
+	<logger name="javax.net.ssl" level="DEBUG"/>
+	<logger name="sun.security.ssl" level="DEBUG"/>
 </configuration>
