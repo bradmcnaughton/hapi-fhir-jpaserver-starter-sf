@@ -6,8 +6,8 @@ server:
   ssl:
     enabled: true
     protocol: TLS
-    enabled-protocols: TLSv1.2
-    ciphers: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    enabled-protocols: TLSv1.2,TLSv1.3
+    ciphers: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
     key-store: classpath:keystore.p12
     key-store-password: changeit
     key-store-type: PKCS12
@@ -48,12 +48,17 @@ management:
 spring:
   main:
     allow-circular-references: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/master
+          jwk-set-uri: http://localhost:8080/realms/master/protocol/openid-connect/certs
   flyway:
     enabled: false
     baselineOnMigrate: true
     fail-on-missing-locations: false
   datasource:
-    #url: 'jdbc:h2:file:./target/database/h2'
     url: jdbc:h2:mem:test_mem
     username: sa
     password: null
@@ -312,35 +317,3 @@ hapi:
     #      responses_enabled: true
     #    binary_storage_enabled: true
     inline_resource_storage_below_size: 4000
-#    bulk_export_enabled: true
-#    subscription:
-#      resthook_enabled: true
-#      websocket_enabled: false
-#      email:
-#        from: some@test.com
-#        host: google.com
-#        port:
-#        username:
-#        password:
-#        auth:
-#        startTlsEnable:
-#        startTlsRequired:
-#        quitWait:
-#    lastn_enabled: true
-#    store_resource_in_lucene_index_enabled: true
-###  This is configuration for normalized quantity search level default is 0
-###   0: NORMALIZED_QUANTITY_SEARCH_NOT_SUPPORTED - default
-###   1: NORMALIZED_QUANTITY_STORAGE_SUPPORTED
-###   2: NORMALIZED_QUANTITY_SEARCH_SUPPORTED
-#    normalized_quantity_search_level: 2
-#elasticsearch:
-#  debug:
-#    pretty_print_json_log: false
-#    refresh_after_write: false
-#  enabled: false
-#  password: SomePassword
-#  required_index_status: YELLOW
-#  rest_url: 'localhost:9200'
-#  protocol: 'http'
-#  schema_management_strategy: CREATE
-#  username: SomeUsername
