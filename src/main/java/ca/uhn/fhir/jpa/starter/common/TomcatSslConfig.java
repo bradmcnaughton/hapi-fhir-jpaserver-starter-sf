@@ -29,6 +29,15 @@ public class TomcatSslConfig {
     @Value("${server.ssl.key-store-type}")
     private String keyStoreType;
 
+    @Value("${server.ssl.trust-store}")
+    private String trustStorePath;
+
+    @Value("${server.ssl.trust-store-password}")
+    private String trustStorePassword;
+
+    @Value("${server.ssl.trust-store-type}")
+    private String trustStoreType;
+
     @Value("${server.ssl.client-auth:want}")
     private String clientAuth;
 
@@ -43,8 +52,8 @@ public class TomcatSslConfig {
         try {
             // Load keystore
             KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            Resource resource = resourceLoader.getResource(keyStorePath);
-            try (InputStream inputStream = resource.getInputStream()) {
+            Resource keyStoreResource = resourceLoader.getResource(keyStorePath);
+            try (InputStream inputStream = keyStoreResource.getInputStream()) {
                 keyStore.load(inputStream, keyStorePassword.toCharArray());
             }
             logger.info("Successfully loaded keystore from: {}", keyStorePath);
@@ -54,19 +63,24 @@ public class TomcatSslConfig {
             keyManagerFactory.init(keyStore, keyStorePassword.toCharArray());
             logger.info("Successfully initialized key manager");
 
-            // Initialize trust manager (only if client auth is required or wanted)
-            TrustManagerFactory trustManagerFactory = null;
-            if (!"none".equalsIgnoreCase(clientAuth)) {
-                trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                trustManagerFactory.init(keyStore);
-                logger.info("Successfully initialized trust manager with keystore");
+            // Load truststore
+            KeyStore trustStore = KeyStore.getInstance(trustStoreType);
+            Resource trustStoreResource = resourceLoader.getResource(trustStorePath);
+            try (InputStream inputStream = trustStoreResource.getInputStream()) {
+                trustStore.load(inputStream, trustStorePassword.toCharArray());
             }
+            logger.info("Successfully loaded truststore from: {}", trustStorePath);
+
+            // Initialize trust manager
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(trustStore);
+            logger.info("Successfully initialized trust manager");
 
             // Create SSL context
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(
                 keyManagerFactory.getKeyManagers(),
-                trustManagerFactory != null ? trustManagerFactory.getTrustManagers() : null,
+                trustManagerFactory.getTrustManagers(),
                 new SecureRandom()
             );
             logger.info("Successfully initialized SSL context with client auth: {}", clientAuth);

@@ -17,6 +17,10 @@ public class WebSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
+                // Allow access to FHIR tester app and resources
+                .requestMatchers("/", "/css/**", "/js/**", "/img/**", "/webjars/**", "/favicon.ico", "/resources/**", "/content/**").permitAll()
+                // Allow access to FHIR tester pages and functionality
+                .requestMatchers("/home", "/about", "/resource", "/search", "/read/**", "/history/**", "/delete/**", "/page/**", "/tester/**", "/server/**").permitAll()
                 // Allow access to metadata endpoint
                 .requestMatchers("/fhir/metadata").permitAll()
                 // Require authentication for all other FHIR endpoints
@@ -24,7 +28,7 @@ public class WebSecurityConfig {
                 // Secure actuator endpoints
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/**").authenticated()
-                .anyRequest().authenticated())
+                .anyRequest().permitAll())
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt());
         

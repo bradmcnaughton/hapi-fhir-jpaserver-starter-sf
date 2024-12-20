@@ -16,6 +16,8 @@ server:
     trust-store-password: changeit
     trust-store-type: JKS
     client-auth: none
+    trust-all: true
+    verify-hostname: false
 #Adds the option to go to eg. http://localhost:8080/actuator/health for seeing the running configuration
 #see https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html#actuator.endpoints
 management:
@@ -48,12 +50,27 @@ management:
 spring:
   main:
     allow-circular-references: true
+  config:
+    oauth2:
+      auth-server-url: http://localhost:8080/realms/master
+      client-id: hapi-fhir
+      client-secret: 3lj5sN3y3tBjYAu5yJb31cfUv2yxHqGF
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/master
-          jwk-set-uri: http://localhost:8080/realms/master/protocol/openid-connect/certs
+          jwk-set-uri: ${spring.config.oauth2.auth-server-url}/protocol/openid-connect/certs
+      client:
+        registration:
+          fhir-client:
+            provider: auth-server
+            client-id: ${spring.config.oauth2.client-id}
+            client-secret: ${spring.config.oauth2.client-secret}
+            authorization-grant-type: client_credentials
+            scope: fhir-api
+        provider:
+          auth-server:
+            token-uri: ${spring.config.oauth2.auth-server-url}/protocol/openid-connect/token
   flyway:
     enabled: false
     baselineOnMigrate: true
@@ -312,6 +329,11 @@ hapi:
         server_address: "http://hapi.fhir.org/baseR4"
         refuse_to_fetch_third_party_urls: false
         fhir_version: R4
+      oauth2:
+        enabled: true
+        register_token_endpoint: ${spring.config.oauth2.auth-server-url}/protocol/openid-connect/token
+        client_id: ${spring.config.oauth2.client-id}
+        client_secret: ${spring.config.oauth2.client-secret}
     #    validation:
     #      requests_enabled: true
     #      responses_enabled: true
