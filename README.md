@@ -6,7 +6,7 @@ Note that this project is specifically intended for end users of the HAPI FHIR J
 
 While this project shows how you can use many parts of the HAPI FHIR framework there are a set of features which you should be aware of are missing or something you need to supply yourself or get professional support ahead of using it directly in production:
 
-1. The service comes with no security implementation. See how it can be done [here](https://hapifhir.io/hapi-fhir/docs/security/introduction.html)
+1. The service comes with basic security implementation including SSL and OAuth2. See how to enhance it further [here](https://hapifhir.io/hapi-fhir/docs/security/introduction.html)
 2. The service comes with no enterprise logging. See how it can be done [here](https://hapifhir.io/hapi-fhir/docs/security/balp_interceptor.html)
 3. The internal topic cache used by subscriptions in HAPI FHIR are not shared across multiple instances as the [default supplied implementation is in-mem](https://github.com/hapifhir/hapi-fhir/blob/master/hapi-fhir-jpaserver-subscription/src/main/java/ca/uhn/fhir/jpa/topic/ActiveSubscriptionTopicCache.java)
 4. The internal message broker channel in HAPI FHIR is not shared across multiple instances as the [default supplied implementation is in-mem](https://github.com/hapifhir/hapi-fhir/blob/master/hapi-fhir-storage/src/main/java/ca/uhn/fhir/jpa/subscription/channel/api/IChannelFactory.java). This impacts the use of modules listed [here](https://smilecdr.com/docs/installation/message_broker.html#modules-dependent-on-message-brokers)
@@ -596,49 +596,22 @@ docker run --rm -it -p 8080:8080 \
 
 You can configure the agent using environment variables or Java system properties, see <https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/> for details.
 
-## Enable SSL/TLS with Self Signed Certificate
+## Security Configuration
 
-The following steps will enable SSL/TLS with a self-signed certificate. SSL will be used for the server and in-browser client (tester). A trust store is created and used by the server for the internal communication which still uses the HTTPS listener.
+The server supports both SSL/TLS for secure communication and OAuth2 for authentication/authorization.
 
-### 1. Certificate and Keystore Setup
+### SSL/TLS Configuration with Self-Signed Certificate
 
-#### A. Generated Self-Signed Certificate and Keystores
-
-1. Created PKCS12 keystore with self-signed certificate:
-
-```bash
-keytool -genkeypair -alias tomcat -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore keystore.p12 -validity 365
-```
-
-2. Created JKS truststore and imported the certificate:
-
-```bash
-# Export certificate from keystore
-keytool -export -alias tomcat -file server.cer -keystore keystore.p12 -storetype PKCS12
-
-# Create truststore and import certificate
-keytool -import -alias tomcat -file server.cer -keystore truststore.jks -storetype JKS
-```
-
-3. Placed keystores in `src/main/resources/`:
-
-- `keystore.p12` - Contains server's private key and certificate
-- `truststore.jks` - Contains trusted certificates (including our server cert)
-
-### 2. Configuration Files Added/Modified
-
-#### A. application.yaml
-
-Added SSL configuration:
+The server is configured to use SSL/TLS by default. The configuration in `application.yaml` includes:
 
 ```yaml
 server:
-  port: 8443
+  port: 8443 # Standard HTTPS port
   ssl:
     enabled: true
     protocol: TLS
-    enabled-protocols: TLSv1.2
-    ciphers: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    enabled-protocols: TLSv1.2,TLSv1.3
+    ciphers: TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_CHACHA20_POLY1305_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
     key-store: classpath:keystore.p12
     key-store-password: changeit
     key-store-type: PKCS12
@@ -649,181 +622,191 @@ server:
     client-auth: none
 ```
 
-#### B. TomcatSslConfig.java
-
-Created to handle SSL configuration for Tomcat:
-
-A detailed breakdown of the `customize()` method:
-
-```java
-@Override
-public void customize(TomcatServletWebServerFactory factory) {
-    factory.addConnectorCustomizers(connector -> {
-        try {
-            // Create temporary files for keystore and truststore
-            File tempKeyStore = createTempStoreFile("keystore", keyStorePath);
-            File tempTrustStore = createTempStoreFile("truststore", trustStorePath);
-
-            // Get the existing SSL host config
-            SSLHostConfig[] sslHostConfigs = connector.getProtocolHandler().findSslHostConfigs();
-            if (sslHostConfigs.length > 0) {
-                SSLHostConfig sslHostConfig = sslHostConfigs[0];
-
-                // Update protocols and ciphers
-                sslHostConfig.setProtocols("TLSv1.2");
-                sslHostConfig.setCiphers("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
-
-                // Update certificate configuration
-                SSLHostConfigCertificate cert = sslHostConfig.getCertificates().iterator().next();
-                cert.setCertificateKeystoreFile(tempKeyStore.getAbsolutePath());
-                cert.setCertificateKeystorePassword(keyStorePassword);
-                cert.setCertificateKeystoreType(keyStoreType);
-
-                // Update truststore configuration
-                sslHostConfig.setTruststoreFile(tempTrustStore.getAbsolutePath());
-                sslHostConfig.setTruststorePassword(trustStorePassword);
-                sslHostConfig.setTruststoreType(trustStoreType);
-            }
-        } catch (IOException e) {
-            logger.error("Failed to configure SSL connector", e);
-            throw new RuntimeException("Failed to configure SSL", e);
-        }
-    });
-}
-```
-
-Key aspects of this implementation:
-
-1. **Classpath to Filesystem Bridge**
-
-   - The keystores/truststores are initially stored in the application's classpath (in `src/main/resources`)
-   - `createTempStoreFile()` extracts these resources to temporary files that Tomcat can access
-   - This allows for secure packaging of certificates with the application while still making them accessible to Tomcat
-
-2. **Connector Configuration**
-
-   - The method customizes Tomcat's SSL connector through `SSLHostConfig`
-   - Sets specific TLS protocol version (TLS 1.2) and strong cipher suites
-   - Points Tomcat to the temporary keystore and truststore files
-
-3. **Resource Management Flow**
-
-   ```
-   Classpath Resources
-         ↓
-   createTempStoreFile()
-         ↓
-   Temporary Files on Disk
-         ↓
-   Tomcat SSL Configuration
-   ```
-
-4. **Security Considerations**
-   - Temporary files are created with unique names (using `File.createTempFile`)
-   - Files are automatically deleted when the JVM exits
-   - Access to the temporary files is limited to the application's runtime
-   - Sensitive material (certificates, private keys) never needs to be stored permanently on the filesystem
-
-This approach provides a clean solution for:
-
-- Packaging certificates securely with the application
-- Making certificates available to Tomcat's SSL configuration
-- Managing the lifecycle of sensitive files
-- Maintaining security best practices for certificate handling
-
-#### C. FhirClientConfig.java
-
-Added to configure FHIR clients with SSL support:
+The SSL configuration is implemented in `TomcatSslConfig.java`, which creates and manages the SSL context:
 
 ```java
 @Configuration
-public class FhirClientConfig {
-    @Autowired
-    private SSLContext sslContext;
+public class TomcatSslConfig {
+    @Value("${server.ssl.key-store}")
+    private Resource keyStore;
+
+    @Value("${server.ssl.key-store-password}")
+    private String keyStorePassword;
+
+    @Value("${server.ssl.trust-store}")
+    private Resource trustStore;
+
+    @Value("${server.ssl.trust-store-password}")
+    private String trustStorePassword;
 
     @Bean
-    public FhirContext fhirContext() {
-        FhirContext ctx = FhirContext.forR4();
-        CloseableHttpClient httpClient = HttpClients.custom()
-                .setSSLContext(sslContext)
-                .build();
-        ctx.getRestfulClientFactory().setHttpClient(httpClient);
-        return ctx;
+    public SSLContext sslContext() throws Exception {
+        // Load the keystore containing the server certificate
+        KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keystore.load(keyStore.getInputStream(), keyStorePassword.toCharArray());
+
+        // Load the truststore containing trusted certificates
+        KeyStore truststore = KeyStore.getInstance(KeyStore.getDefaultType());
+        truststore.load(trustStore.getInputStream(), trustStorePassword.toCharArray());
+
+        // Initialize the SSL context with both keystores
+        SSLContextBuilder builder = SSLContextBuilder.create();
+        builder.loadKeyMaterial(keystore, keyStorePassword.toCharArray());
+        builder.loadTrustMaterial(truststore, null);
+
+        return builder.build();
     }
 }
 ```
 
-#### D. FhirTesterConfig.java
+#### Certificate Setup
 
-Updated to support SSL in the FHIR tester UI:
+To enable SSL with a self-signed certificate:
+
+1. Generate a PKCS12 keystore with your server certificate:
+
+```bash
+keytool -genkeypair -alias tomcat -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore keystore.p12 -validity 365
+```
+
+2. Export the certificate and create a truststore:
+
+```bash
+# Export certificate from keystore
+keytool -export -alias tomcat -file server.cer -keystore keystore.p12 -storetype PKCS12
+
+# Create truststore and import certificate
+keytool -import -alias tomcat -file server.cer -keystore truststore.jks -storetype JKS
+```
+
+3. Place both files in `src/main/resources/`:
+   - `keystore.p12` - Contains server's private key and certificate
+   - `truststore.jks` - Contains trusted certificates
+
+The server uses Spring Boot's SSL configuration along with a custom `TomcatSslConfig` class that creates and manages the SSL context. This SSL context is then shared with the FHIR client components to ensure proper certificate validation for internal communications between the Local Tester and the FHIR server backend.
+
+Key features of the SSL implementation:
+
+- TLS 1.2 and 1.3 support
+- Strong cipher suite selection
+- Proper certificate chain validation
+- Shared SSL context across all components
+- Automatic resource loading from classpath
+
+### OAuth2 Configuration
+
+The server uses OAuth2 for authentication. The configuration includes:
+
+```yaml
+spring:
+  config:
+    oauth2:
+      auth-server-url: http://localhost:8080/realms/master # Your OAuth server URL
+      client-id: hapi-fhir # Your client ID
+      client-secret: your-client-secret # Your client secret
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${spring.config.oauth2.auth-server-url}/protocol/openid-connect/certs
+```
+
+The OAuth2 client implementation is in `FhirTesterConfig.java`, which configures the FHIR client with OAuth2 authentication:
 
 ```java
 @Configuration
 public class FhirTesterConfig {
-    private final SSLContext sslContext;
+    @Value("${spring.config.oauth2.auth-server-url}")
+    private String authServerUrl;
+
+    @Value("${spring.config.oauth2.client-id}")
+    private String clientId;
+
+    @Value("${spring.config.oauth2.client-secret}")
+    private String clientSecret;
 
     @Bean
     public TesterConfig testerConfig() {
         TesterConfig retVal = new TesterConfig();
+
+        FhirContext ctx = FhirContext.forR4();
+        retVal.setFhirContext(ctx);
+
+        // Get OAuth2 token and configure client
+        String token = getAccessToken();
+        IGenericClient client = ctx.newRestfulGenericClient(getServerBaseUrl());
+        client.registerInterceptor(new BearerTokenAuthInterceptor(token));
+
         retVal.addServer()
             .withId("home")
-            .withFhirVersion(FhirVersionEnum.valueOf(fhirVersion))
-            .withBaseUrl(serverAddress)
-            .withName(name);
+            .withFhirClient(client)
+            .withName("Local Tester")
+            .withVersion(FhirVersionEnum.R4);
 
-        retVal.setClientFactory(new ITestingUiClientFactory() {
-            @Override
-            public IGenericClient newClient(FhirContext theFhirContext,
-                                          HttpServletRequest theRequest,
-                                          String theServerBase) {
-                CloseableHttpClient httpClient = HttpClients.custom()
-                        .setSSLContext(sslContext)
-                        .build();
-                theFhirContext.getRestfulClientFactory().setHttpClient(httpClient);
-                return theFhirContext.newRestfulGenericClient(theServerBase);
-            }
-        });
         return retVal;
+    }
+
+    private String getAccessToken() {
+        RestTemplate restTemplate = new RestTemplate();
+        String tokenUrl = authServerUrl + "/protocol/openid-connect/token";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("grant_type", "client_credentials");
+        map.add("client_id", clientId);
+        map.add("client_secret", clientSecret);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+        ResponseEntity<TokenResponse> response = restTemplate.postForEntity(
+            tokenUrl, request, TokenResponse.class);
+
+        return response.getBody().getAccessToken();
     }
 }
 ```
 
-#### E. logback.xml
+The Bearer token is added to requests using `BearerTokenAuthInterceptor.java`:
 
-Added SSL-related debug logging (optional). Will assist with debugging SSL/TLS issues:
+```java
+public class BearerTokenAuthInterceptor implements IClientInterceptor {
+    private final String token;
 
-```xml
-<logger name="org.apache.tomcat.util.net" level="DEBUG"/>
-<logger name="org.springframework.boot.web.embedded.tomcat" level="DEBUG"/>
-<logger name="javax.net.ssl" level="DEBUG"/>
-<logger name="sun.security.ssl" level="DEBUG"/>
+    public BearerTokenAuthInterceptor(String token) {
+        this.token = token;
+    }
+
+    @Override
+    public void interceptRequest(IHttpRequest request) {
+        request.addHeader("Authorization", "Bearer " + token);
+    }
+
+    @Override
+    public void interceptResponse(IHttpResponse response) {
+        // No action needed for responses
+    }
+}
 ```
 
-### Key Features of the Implementation
+The FHIR Tester UI is configured to use OAuth2 when making requests to the FHIR server. It automatically:
 
-1. **TLS 1.2 Support** with strong cipher suites:
+1. Obtains an access token using client credentials flow
+2. Adds the token to all FHIR API requests
+3. Handles token refresh when needed
 
-   - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-   - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+To use your own OAuth2 server:
 
-2. **Proper Certificate Management**
+1. Update the `auth-server-url` to point to your OAuth2 server
+2. Configure your client credentials (`client-id` and `client-secret`)
+3. Ensure your OAuth2 server's JWKS endpoint is accessible at the configured path
 
-   - PKCS12 keystore for server certificate and private key
-   - JKS truststore for trusted certificates
-   - Proper certificate chain validation
+Example token request:
 
-3. **Centralized SSL Context**
-
-   - Single SSLContext bean shared across components
-   - Consistent SSL configuration throughout the application
-
-4. **Secure Client Configuration**
-
-   - All FHIR clients configured with proper SSL context
-   - Proper certificate validation for internal calls
-
-5. **Debug Logging** for SSL/TLS operations
-
-6. **Temporary File Management** for storing keystores/truststores from the classpath in an accessible location for Tomcat
-
-The implementation provides a secure HTTPS endpoint at `https://localhost:8443/fhir` with proper certificate management and SSL configuration across all components.
+```bash
+curl -X POST http://localhost:8080/realms/master/protocol/openid-connect/token \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "client_id=hapi-fhir" \
+     -d "client_secret=your-client-secret" \
+     -d "grant_type=client_credentials"
+```
